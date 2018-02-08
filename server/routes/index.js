@@ -2,11 +2,10 @@ const {log} = require('../utils/utils')
 const express = require('express')
 const index = express.Router()
 const User = require('../models/user')
-const {currentUser} = require('../utils/validate')
 
 // 首页
 index.get('/', async(req, res) => {
-	let u = await currentUser(req)
+	let u = await User.currentUser(req)
 	const args = {
 		user: u,
 	}

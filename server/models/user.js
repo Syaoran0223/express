@@ -19,27 +19,51 @@ class User extends Model {
 		this.ct = now
 		this.ut = now
 	}
+
 	// 根据用户名查找是否存在
-	static async findByUsername (form) {
+	static async findByUsername(form) {
 		const {username} = form
 		const user = await userDB.find({
 			where: {
-				username: username
+				username: username,
 			},
-			raw: true
+			raw: true,
 		})
 		return user
 	}
+
 	// 通过 id 查找用户
-	static async findByUid (uid) {
+	static async findByUid(uid) {
 		let u = await userDB.find({
-			where:{
-				id: uid
+			where: {
+				id: uid,
 			},
-			raw: true
+			raw: true,
 		})
 		return u
 	}
+
+	//	当前用户
+	static async currentUser(request) {
+		// 通过 session 获取 uid, 如果没有的话就设置成空字符串
+		const fakeId = -1
+		const uid = request.session.uid || fakeId
+		const u = await User.findByUid(uid)
+		if (u === null) {
+			// 如果当前没有用户登录, 造一个占位的用户
+			// 这样我们处理会非常方便,
+			// 比如显示用户名就直接用 u.username
+			// 而不需要 u !== null && u.username
+			const fakeUser = {
+				id: fakeId,
+				username: '游客',
+			}
+			return fakeUser
+		} else {
+			return u
+		}
+	}
+
 	// 加密
 	static saltedPassword(password, salt = 'node8') {
 		function _sha1(s) {
@@ -76,7 +100,6 @@ class User extends Model {
 		} else {
 			// 查找是否存在相同用户名
 			let result = await this.findByUsername(form)
-			log('注册', result)
 			// 加密 存入数据
 			if (result == null) {
 				let cls = this.create(form)
@@ -94,14 +117,11 @@ class User extends Model {
 		let cls = this.create(form)
 		// 查找用户是否存在
 		let user = await this.findByUsername(form) || false
-		log('user', user)
-		if(user != false) {
-			log('cls', cls.password)
-			log('user', user.password)
+		if (user != false) {
 			let valiUsername = user.username == cls.username
 			let valiPassword = user.password == cls.password
 			let vali = valiUsername && valiPassword
-			if(vali == true) {
+			if (vali == true) {
 				return await this.findByUsername(form)
 			} else {
 				return false
@@ -122,7 +142,7 @@ const test = async() => {
 	}
 	// const u = User.create(form)
 	// const u = await User.register(form)
-	const  u = await User.validateAuth(form)
+	const u = await User.validateAuth(form)
 	log('u', u)
 }
 if (require.main === module) {
